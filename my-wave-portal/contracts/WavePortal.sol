@@ -8,13 +8,14 @@ import "hardhat/console.sol";
 
 contract WavePortal {
   uint256 totalWaves;
-  uint256 private seed;
+  address payable public owner;
 
-  event NewWave(address indexed from, uint256 timestamp, string message);
+  event NewWave(address indexed from, uint256 timestamp, string message, string name);
 
   struct Wave {
     address waver; // the address of the user who waved
     string message; // the message the user sent
+    string name;
     uint256 timestamp; // the timestamp when the user waved
   }
 
@@ -29,57 +30,30 @@ contract WavePortal {
   constructor() payable {
       console.log("wave!!");
 
-      seed = (block.timestamp + block.difficulty) % 100;
+      owner = payable(msg.sender);
   }
 
-  function wave(string memory _message) public {
-    // totalWaves += 1;
-
-    // console.log("%s waved w/ message %s", msg.sender, _message); // This is the message our user sends us from the frontend!
-
-    // waves.push(Wave(msg.sender, _message, block.timestamp));
-
-    // seed = (block.difficulty + block.timestamp + seed) % 100;
-
-    // console.log("Random # generated: %d", seed);
-
-        /*
-        * We need to make sure the current timestamp is at least 15-minutes bigger than the last timestamp we stored
-        */
-        require(
-            lastWavedAt[msg.sender] + 15 minutes < block.timestamp,
-            "Wait 15m"
-        );
-
-        /*
-         * Update the current timestamp we have for the user
-         */
-        lastWavedAt[msg.sender] = block.timestamp;
+    function wave(
+        string memory _message,
+        string memory _name,
+        uint256 _payAmount
+    ) public payable {
+        uint256 cost = 0.001 ether;
+        require(_payAmount <= cost, "Insufficient Ether provided");
 
         totalWaves += 1;
-        console.log("%s has waved!", msg.sender);
-
-        waves.push(Wave(msg.sender, _message, block.timestamp));
+        console.log("%s has just waved!", msg.sender);
 
         /*
-         * Generate a new seed for the next user that sends a wave
+         * This is where I actually store the coffee data in the array.
          */
-        seed = (block.difficulty + block.timestamp + seed) % 100;
+        waves.push(Wave(msg.sender, _message, _name, block.timestamp));
 
-    if (seed <= 50) {
-      console.log("%s won!", msg.sender);
+        (bool success, ) = owner.call{value: _payAmount}("");
+        require(success, "Failed to send money");
 
-      uint256 prizeAmount = 0.0001 ether;
-      require( // checks to see that some condition is true
-          prizeAmount <= address(this).balance, // address(this).balance is the balance of the contract itself.
-          "Trying to withdraw more money than the contract has."
-      );
-      (bool success, ) = (msg.sender).call{value: prizeAmount}(""); // we send money
-      require(success, "Failed to withdraw money from contract.");
+        emit NewWave(msg.sender, block.timestamp, _message, _name);
     }
-
-    emit NewWave(msg.sender, block.timestamp, _message);
-  }
 
   function getAllWaves() public view returns (Wave[] memory) {
     return waves;
