@@ -18,7 +18,6 @@
 - Replit
 
 ## Acknowledgements
-Give credit here.
 - These projects are based on [buildspace](https://app.buildspace.so/home).
 
 
